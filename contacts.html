@@ -34,9 +34,9 @@
             <!-- Top row -->
             <div class="d-flex justify-content-between align-items-center">
 
-                <!-- Welcome title -->
+                <!-- Welcome title (username filled in by app.js) -->
                 <h1 class="title-text m-0" id="welcomeText">
-                    Hello, Name
+                    Hello, ...
                 </h1>
 
                 <!-- Logout button -->
@@ -69,38 +69,38 @@
 
                         <!-- First name -->
                         <div class="col-md-6">
+                            <label class="field-label">First Name <span class="required-star">*</span></label>
                             <input
                                 type="text"
                                 class="form-control custom-input"
-                                id="addFirstName"
-                                placeholder="First Name">
+                                id="addFirstName">
                         </div>
 
                         <!-- Last name -->
                         <div class="col-md-6">
+                            <label class="field-label">Last Name <span class="required-star">*</span></label>
                             <input
                                 type="text"
                                 class="form-control custom-input"
-                                id="addLastName"
-                                placeholder="Last Name">
+                                id="addLastName">
                         </div>
 
                         <!-- Email -->
                         <div class="col-md-6">
+                            <label class="field-label">Email <span class="required-star">*</span></label>
                             <input
                                 type="email"
                                 class="form-control custom-input"
-                                id="addEmail"
-                                placeholder="Email">
+                                id="addEmail">
                         </div>
 
                         <!-- Phone -->
                         <div class="col-md-6">
+                            <label class="field-label">Phone Number <span class="required-star">*</span></label>
                             <input
                                 type="text"
                                 class="form-control custom-input"
-                                id="addPhone"
-                                placeholder="Phone Number">
+                                id="addPhone">
                         </div>
 
                     </div>
@@ -112,10 +112,13 @@
                         Add
                     </button>
 
+                    <!-- Inline validation error for add form -->
+                    <p class="dark-error-text mt-2 mb-0" id="addError"></p>
+
                 </div>
 
-                <!-- Edit contact column -->
-                <div class="col-lg-6">
+                <!-- Edit contact column (disabled until a contact is selected) -->
+                <div class="col-lg-6" id="editSection">
 
                     <!-- Edit title -->
                     <h2 class="section-title mb-3">
@@ -127,38 +130,42 @@
 
                         <!-- First name -->
                         <div class="col-md-6">
+                            <label class="field-label">First Name <span class="required-star">*</span></label>
                             <input
                                 type="text"
                                 class="form-control custom-input"
                                 id="editFirstName"
-                                placeholder="First Name">
+                                disabled>
                         </div>
 
                         <!-- Last name -->
                         <div class="col-md-6">
+                            <label class="field-label">Last Name <span class="required-star">*</span></label>
                             <input
                                 type="text"
                                 class="form-control custom-input"
                                 id="editLastName"
-                                placeholder="Last Name">
+                                disabled>
                         </div>
 
                         <!-- Email -->
                         <div class="col-md-6">
+                            <label class="field-label">Email <span class="required-star">*</span></label>
                             <input
                                 type="email"
                                 class="form-control custom-input"
                                 id="editEmail"
-                                placeholder="Email">
+                                disabled>
                         </div>
 
                         <!-- Phone -->
                         <div class="col-md-6">
+                            <label class="field-label">Phone Number <span class="required-star">*</span></label>
                             <input
                                 type="text"
                                 class="form-control custom-input"
                                 id="editPhone"
-                                placeholder="Phone Number">
+                                disabled>
                         </div>
 
                     </div>
@@ -169,18 +176,28 @@
                         <!-- Update button -->
                         <button
                             class="btn dark-btn"
-                            id="updateButton">
+                            id="updateButton"
+                            disabled>
                             Update
                         </button>
 
                         <!-- Delete button -->
                         <button
                             class="btn dark-btn"
-                            id="deleteButton">
+                            id="deleteButton"
+                            disabled>
                             Delete
                         </button>
 
                     </div>
+
+                    <!-- Inline validation error for edit form -->
+                    <p class="dark-error-text mt-2 mb-0" id="editError"></p>
+
+                    <!-- No-selection hint -->
+                    <p class="edit-hint mt-3" id="editHint">
+                        Select a contact to edit or delete
+                    </p>
 
                 </div>
 
@@ -204,7 +221,7 @@
                     type="text"
                     class="form-control custom-input"
                     id="searchInput"
-                    placeholder="Search Contact">
+                    placeholder="Search contacts...">
 
                 <!-- Search button -->
                 <button
@@ -218,72 +235,8 @@
 
             </div>
 
-            <!-- Contacts grid -->
-            <div class="row g-4" id="contactList">
-
-                <!-- Contact card -->
-                <div class="col-lg-4">
-
-                    <!-- Selectable contact -->
-                    <div
-                        class="contact-card selected-contact"
-                        onclick="selectContact(this,
-                        'John',
-                        'Doe',
-                        'john@example.com',
-                        '1234567890')">
-
-                        <!-- Contact name -->
-                        <h3 class="contact-name">
-                            John Doe
-                        </h3>
-
-                        <!-- Contact phone -->
-                        <p class="contact-info">
-                            1234567890
-                        </p>
-
-                        <!-- Contact email -->
-                        <p class="contact-info">
-                            john@example.com
-                        </p>
-
-                    </div>
-
-                </div>
-
-                <!-- Contact card -->
-                <div class="col-lg-4">
-
-                    <!-- Selectable contact -->
-                    <div
-                        class="contact-card"
-                        onclick="selectContact(this,
-                        'Jane',
-                        'Doe',
-                        'jane@example.com',
-                        '9876543210')">
-
-                        <!-- Contact name -->
-                        <h3 class="contact-name">
-                            Jane Doe
-                        </h3>
-
-                        <!-- Contact phone -->
-                        <p class="contact-info">
-                            9876543210
-                        </p>
-
-                        <!-- Contact email -->
-                        <p class="contact-info">
-                            jane@example.com
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
+            <!-- Contacts grid (populated by app.js) -->
+            <div class="row g-4" id="contactList"></div>
 
         </div>
 
