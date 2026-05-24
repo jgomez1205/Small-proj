@@ -1,0 +1,131 @@
+/* Page font */
+body {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Main background */
+.dark-bg {
+    background-color: #383841;
+    color: white;
+}
+
+/* Login content width */
+.login-content {
+    width: 100%;
+    max-width: 600px;
+}
+
+/* Main title */
+.title-text {
+    color: #CBF6E3;
+    font-size: 4rem;
+    font-weight: bold;
+}
+
+/* Section titles */
+.section-title {
+    font-weight: bold;
+}
+
+/* Form labels */
+.form-text {
+    color: white;
+    font-size: 1.5rem;
+}
+
+/* Custom inputs */
+.custom-input {
+    border-radius: 0;
+    border: none;
+    padding: 12px;
+}
+
+/* Main buttons */
+.custom-btn {
+    background-color: #CBF6E3;
+    color: #383841;
+    font-weight: bold;
+    font-size: 1.5rem;
+    border: 3px solid #74E7B5;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+/* Main button hover */
+.custom-btn:hover {
+    background-color: #CBF6E3;
+}
+
+/* Dark buttons */
+.dark-btn {
+    background-color: #383841;
+    color: white;
+    border-radius: 10px;
+    border: 3px solid #26262C;
+    padding: 8px 24px;
+    font-size: 1.2rem;
+}
+
+/* Dark button hover */
+.dark-btn:hover {
+    background-color: #383841;
+}
+
+/* Add/edit panel */
+.green-panel {
+    background-color: #74E7B5;
+    color: #383841;
+    width: 100%;
+    border-radius: 0;
+}
+
+/* Search button */
+.search-btn {
+    background-color: #74E7B5;
+    border: none;
+    font-size: 1.4rem;
+    border-radius: 0;
+}
+
+/* Contact card */
+.contact-card {
+    border: 2px solid #74E7B5;
+    padding: 20px;
+    background-color: #383841;
+    cursor: pointer;
+    transition: 0.2s;
+    border-radius: 10px;
+}
+
+/* Contact hover */
+.contact-card:hover {
+    transform: scale(1.02);
+}
+
+/* Selected contact */
+.selected-contact {
+    background-color: #74E7B5;
+}
+
+/* Selected contact text */
+.selected-contact .contact-name,
+.selected-contact .contact-info {
+    color: #383841;
+}
+
+/* Contact name */
+.contact-name {
+    color: #74E7B5;
+    font-weight: bold;
+}
+
+/* Contact info */
+.contact-info {
+    margin: 0;
+    color: #CBF6E3;
+}
+
+/* Error text */
+.error-text {
+    color: #ff8a8a;
+}

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <!-- Character encoding -->
+    <meta charset="UTF-8">
+
+    <!-- Mobile responsiveness -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Page title -->
+    <title>Contacts</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+
+</head>
+
+<body class="dark-bg">
+
+    <!-- Main page container -->
+    <div class="container-fluid p-0">
+
+        <!-- Header section -->
+        <div class="px-5 py-4">
+
+            <!-- Top row -->
+            <div class="d-flex justify-content-between align-items-center">
+
+                <!-- Welcome title -->
+                <h1 class="title-text m-0" id="welcomeText">
+                    Hello, Name
+                </h1>
+
+                <!-- Logout button -->
+                <button
+                    class="btn custom-btn"
+                    id="logoutButton">
+                    Logout
+                </button>
+
+            </div>
+
+        </div>
+
+        <!-- Add/edit panel -->
+        <div class="green-panel px-5 py-4 mb-4">
+
+            <!-- Row container -->
+            <div class="row g-5">
+
+                <!-- Add contact column -->
+                <div class="col-lg-6">
+
+                    <!-- Add title -->
+                    <h2 class="section-title mb-3">
+                        Add Contact
+                    </h2>
+
+                    <!-- Form row -->
+                    <div class="row g-3">
+
+                        <!-- First name -->
+                        <div class="col-md-6">
+                            <input
+                                type="text"
+                                class="form-control custom-input"
+                                id="addFirstName"
+                                placeholder="First Name">
+                        </div>
+
+                        <!-- Last name -->
+                        <div class="col-md-6">
+                            <input
+                                type="text"
+                                class="form-control custom-input"
+                                id="addLastName"
+                                placeholder="Last Name">
+                        </div>
+
+                        <!-- Email -->
+                        <div class="col-md-6">
+                            <input
+                                type="email"
+                                class="form-control custom-input"
+                                id="addEmail"
+                                placeholder="Email">
+                        </div>
+
+                        <!-- Phone -->
+                        <div class="col-md-6">
+                            <input
+                                type="text"
+                                class="form-control custom-input"
+                                id="addPhone"
+                                placeholder="Phone Number">
+                        </div>
+
+                    </div>
+
+                    <!-- Add button -->
+                    <button
+                        class="btn dark-btn mt-4"
+                        id="addButton">
+                        Add
+                    </button>
+
+                </div>
+
+                <!-- Edit contact column -->
+                <div class="col-lg-6">
+
+                    <!-- Edit title -->
+                    <h2 class="section-title mb-3">
+                        Edit Contact
+                    </h2>
+
+                    <!-- Form row -->
+                    <div class="row g-3">
+
+                        <!-- First name -->
+                        <div class="col-md-6">
+                            <input
+                                type="text"
+                                class="form-control custom-input"
+                                id="editFirstName"
+                                placeholder="First Name">
+                        </div>
+
+                        <!-- Last name -->
+                        <div class="col-md-6">
+                            <input
+                                type="text"
+                                class="form-control custom-input"
+                                id="editLastName"
+                                placeholder="Last Name">
+                        </div>
+
+                        <!-- Email -->
+                        <div class="col-md-6">
+                            <input
+                                type="email"
+                                class="form-control custom-input"
+                                id="editEmail"
+                                placeholder="Email">
+                        </div>
+
+                        <!-- Phone -->
+                        <div class="col-md-6">
+                            <input
+                                type="text"
+                                class="form-control custom-input"
+                                id="editPhone"
+                                placeholder="Phone Number">
+                        </div>
+
+                    </div>
+
+                    <!-- Button row -->
+                    <div class="d-flex gap-3 mt-4">
+
+                        <!-- Update button -->
+                        <button
+                            class="btn dark-btn"
+                            id="updateButton">
+                            Update
+                        </button>
+
+                        <!-- Delete button -->
+                        <button
+                            class="btn dark-btn"
+                            id="deleteButton">
+                            Delete
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Contacts section -->
+        <div class="px-5 pb-5">
+
+            <!-- Contacts title -->
+            <h2 class="section-title text-white mb-3">
+                Contacts
+            </h2>
+
+            <!-- Search bar -->
+            <div class="input-group mb-4">
+
+                <!-- Search input -->
+                <input
+                    type="text"
+                    class="form-control custom-input"
+                    id="searchInput"
+                    placeholder="Search Contact">
+
+                <!-- Search button -->
+                <button
+                    class="btn search-btn"
+                    id="searchButton">
+
+                    <!-- Bootstrap search icon -->
+                    <i class="bi bi-search"></i>
+
+                </button>
+
+            </div>
+
+            <!-- Contacts grid -->
+            <div class="row g-4" id="contactList">
+
+                <!-- Contact card -->
+                <div class="col-lg-4">
+
+                    <!-- Selectable contact -->
+                    <div
+                        class="contact-card selected-contact"
+                        onclick="selectContact(this,
+                        'John',
+                        'Doe',
+                        'john@example.com',
+                        '1234567890')">
+
+                        <!-- Contact name -->
+                        <h3 class="contact-name">
+                            John Doe
+                        </h3>
+
+                        <!-- Contact phone -->
+                        <p class="contact-info">
+                            1234567890
+                        </p>
+
+                        <!-- Contact email -->
+                        <p class="contact-info">
+                            john@example.com
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <!-- Contact card -->
+                <div class="col-lg-4">
+
+                    <!-- Selectable contact -->
+                    <div
+                        class="contact-card"
+                        onclick="selectContact(this,
+                        'Jane',
+                        'Doe',
+                        'jane@example.com',
+                        '9876543210')">
+
+                        <!-- Contact name -->
+                        <h3 class="contact-name">
+                            Jane Doe
+                        </h3>
+
+                        <!-- Contact phone -->
+                        <p class="contact-info">
+                            9876543210
+                        </p>
+
+                        <!-- Contact email -->
+                        <p class="contact-info">
+                            jane@example.com
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Main JavaScript -->
+    <script src="js/app.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>
