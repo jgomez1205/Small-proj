@@ -14,7 +14,7 @@ function sendJson($data, $statusCode = 200) {
     exit();
 }
 
-// Error response (keeps same format as professor's examples)
+// Error response 
 function returnWithError($err) {
     sendJson(["id" => 0, "firstName" => "", "lastName" => "", "error" => $err], 200);
 }
@@ -29,7 +29,7 @@ function returnSuccess($message = "") {
     sendJson(["success" => true, "message" => $message], 200);
 }
 
-// Database connection (hardcoded per professor's instructions)
+// Database connection (hardcoded)
 function getDB() {
     $conn = new mysqli("localhost", "TheBeast", "WeLoveCOP4331", "COP4331");
     if ($conn->connect_error) {
