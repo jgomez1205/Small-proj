@@ -43,8 +43,11 @@ body {
 }
 
 /* Required asterisk */
+.dark-required-star {
+    color: #26262C;
+}
 .required-star {
-    color: #c0392b;
+    color: #CBF6E3;
 }
 
 /* Custom inputs */
