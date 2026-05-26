@@ -1,26 +1,32 @@
 <?php
-require_once 'common.php';
+require_once "common.php";
 
-if (!isset($_GET['userId']) || !isset($_GET['search'])) {
-    returnWithError("Missing userId or search term");
+$input = getRequestInfo();
+
+$search = "%" . ($input["search"] ?? "") . "%";
+$userId = $input["userId"] ?? 0;
+
+$conn = getConnection();
+
+if ($conn->connect_error)
+{
+    sendJson(["results" => [], "error" => "Database connection failed"]);
     exit();
 }
 
-$userId = $_GET['userId'];
-$search = "%" . $_GET['search'] . "%";
-
-$conn = getDB();
-$stmt = $conn->prepare("SELECT ID, FirstName, LastName, Phone, Email FROM Contacts WHERE UserID=? AND (FirstName LIKE ? OR LastName LIKE ?)");
-$stmt->bind_param("iss", $userId, $search, $search);
+$stmt = $conn->prepare("SELECT ID, FirstName, LastName, Phone, Email FROM Contacts WHERE UserID = ? AND (FirstName LIKE ? OR LastName LIKE ? OR Phone LIKE ? OR Email LIKE ?) ORDER BY LastName, FirstName");
+$stmt->bind_param("issss", $userId, $search, $search, $search, $search);
 $stmt->execute();
-$result = $stmt->get_result();
 
-$results = [];
-while ($row = $result->fetch_assoc()) {
-    $results[] = $row;
+$result = $stmt->get_result();
+$contacts = [];
+
+while ($row = $result->fetch_assoc())
+{
+    $contacts[] = $row;
 }
 
-sendJson(["success" => true, "results" => $results], 200);
+sendJson(["results" => $contacts, "error" => ""]);
 
 $stmt->close();
 $conn->close();
