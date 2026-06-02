@@ -1,27 +1,5 @@
-// ─── MOCK DATA ────────────────────────────────────────────────────────────────
-// Temporary contact list — replace this fetch with a real API call later.
-// When the API is ready, delete this array and call loadContacts() which
-// already points to the right endpoint (just uncomment the fetch lines).
-
-const MOCK_CONTACTS = [
-    {
-        id: 1,
-        firstName: "John",
-        lastName: "Doe",
-        email: "john@example.com",
-        phone: "1234567890"
-    },
-    {
-        id: 2,
-        firstName: "Jane",
-        lastName: "Doe",
-        email: "jane@example.com",
-        phone: "9876543210"
-    }
-];
-
-// API base URL — change this to your Digital Ocean domain when deployed
-const API_BASE = "https://yourdomain.com/api";
+// API base URL
+const API_BASE = "http://dylanwexler.com/LAMPAPI";
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 
@@ -55,36 +33,54 @@ if (document.getElementById("contactList"))
     initContactsPage();
 }
 
-// Set up the contacts page
+// Redirect to login if not logged in, then load page
 function initContactsPage()
 {
-    // Display the logged-in username
+    // Redirect to login if no user session exists
+    if (!sessionStorage.getItem("userId"))
+    {
+        window.location.href = "index.html";
+        return;
+    }
+
+    // Display the logged-in user's name
     displayUsername();
 
     // Disable edit section until a contact is selected
     setEditEnabled(false);
 
-    // Load contacts from mock data (swap for API later)
+    // Load this user's contacts from the API
     loadContacts();
 }
 
 // ─── USERNAME ─────────────────────────────────────────────────────────────────
 
-// Show the logged-in username in the header
-// TODO: replace sessionStorage.getItem("username") with whatever the API returns
+// Show the logged-in user's first name in the header
 function displayUsername()
 {
     if (!welcomeText) return;
 
-    // Try to read the username saved during login
-    const username = sessionStorage.getItem("username") || "User";
+    const firstName = sessionStorage.getItem("firstName") || "User";
 
-    welcomeText.textContent = "Hello, " + username;
+    welcomeText.textContent = "Hello, " + firstName;
+}
+
+// ─── API HELPER ───────────────────────────────────────────────────────────────
+
+// Send a POST request to a PHP endpoint and return the parsed JSON response
+function apiPost(endpoint, body)
+{
+    return fetch(API_BASE + "/" + endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+    })
+    .then(res => res.json());
 }
 
 // ─── LOGIN PAGE FUNCTIONS ─────────────────────────────────────────────────────
 
-// Login button — called from index.html context
+// Log in an existing user
 function login()
 {
     const username = document.getElementById("loginUsername").value.trim();
@@ -97,44 +93,91 @@ function login()
         return;
     }
 
-    // TODO: replace this block with a real fetch() to POST /api/login
-    // Expected request body: { login: username, password: password }
-    // Expected response:     { id: ..., firstName: ..., lastName: ... }
-    // On success: save username to sessionStorage and redirect
+    // POST { login, password } → { id, firstName, lastName, error }
+    apiPost("Login.php", { login: username, password: password })
+    .then(data =>
+    {
+        // Show error message if login failed
+        if (data.error !== "")
+        {
+            result.textContent = data.error;
+            return;
+        }
 
-    console.log("Login:", username);
+        // Save user info to session storage
+        sessionStorage.setItem("userId",    data.id);
+        sessionStorage.setItem("firstName", data.firstName);
+        sessionStorage.setItem("lastName",  data.lastName);
 
-    // Save username so contacts page can display it
-    sessionStorage.setItem("username", username);
-
-    // Redirect to contacts page
-    window.location.href = "contacts.html";
+        // Go to contacts page
+        window.location.href = "contacts.html";
+    })
+    .catch(() =>
+    {
+        result.textContent = "Could not connect to server.";
+    });
 }
 
-// Register button — called from index.html context
+// Register a new user
 function register()
 {
-    const username = document.getElementById("loginUsername").value.trim();
-    const password = document.getElementById("loginPassword").value.trim();
-    const result   = document.getElementById("loginResult");
+    const firstName = document.getElementById("registerFirstName").value.trim();
+    const lastName  = document.getElementById("registerLastName").value.trim();
+    const username  = document.getElementById("loginUsername").value.trim();
+    const password  = document.getElementById("loginPassword").value.trim();
+    const result    = document.getElementById("loginResult");
 
-    if (!username || !password)
+    if (!firstName || !lastName || !username || !password)
     {
-        result.textContent = "Please enter a username and password.";
+        result.textContent = "Please fill in all fields to register.";
         return;
     }
 
-    // TODO: replace this block with a real fetch() to POST /api/register
-    // Expected request body: { login: username, password: password }
-    // On success: redirect to contacts page or auto-login
+    // POST { firstName, lastName, login, password } → { error }
+    apiPost("Register.php", {
+        firstName: firstName,
+        lastName:  lastName,
+        login:     username,
+        password:  password
+    })
+    .then(data =>
+    {
+        // Show error if registration failed (e.g. username taken)
+        if (data.error !== "")
+        {
+            result.textContent = data.error;
+            return;
+        }
 
-    console.log("Register:", username);
+        // Registration succeeded — now log the user in automatically
+        result.textContent = "";
+        return apiPost("Login.php", { login: username, password: password });
+    })
+    .then(data =>
+    {
+        // Skip if register already showed an error
+        if (!data) return;
 
-    sessionStorage.setItem("username", username);
-    window.location.href = "contacts.html";
+        if (data.error !== "")
+        {
+            result.textContent = data.error;
+            return;
+        }
+
+        // Save user info and redirect
+        sessionStorage.setItem("userId",    data.id);
+        sessionStorage.setItem("firstName", data.firstName);
+        sessionStorage.setItem("lastName",  data.lastName);
+
+        window.location.href = "contacts.html";
+    })
+    .catch(() =>
+    {
+        result.textContent = "Could not connect to server.";
+    });
 }
 
-// Logout — clears session and returns to login
+// Clear session and return to login page
 function logout()
 {
     sessionStorage.clear();
@@ -143,21 +186,46 @@ function logout()
 
 // ─── CONTACT LOADING ──────────────────────────────────────────────────────────
 
-// Load and render all contacts
-// When the API is ready, replace MOCK_CONTACTS with a real fetch() call
+// Load all contacts for the logged-in user by searching with an empty string
 function loadContacts()
 {
-    // ── MOCK VERSION (remove this block when API is ready) ──
-    renderContacts(MOCK_CONTACTS);
+    const userId = parseInt(sessionStorage.getItem("userId"));
 
-    // ── API VERSION (uncomment when API is ready) ──
-    // fetch(API_BASE + "/contacts", {
-    //     method: "GET",
-    //     headers: { "Content-Type": "application/json" }
-    // })
-    // .then(res => res.json())
-    // .then(data => renderContacts(data))
-    // .catch(err => console.error("Failed to load contacts:", err));
+    // POST { search: "", userId } → { results: [...], error }
+    apiPost("SearchContacts.php", { search: "", userId: userId })
+    .then(data =>
+    {
+        if (data.error !== "")
+        {
+            console.error("Failed to load contacts:", data.error);
+            return;
+        }
+
+        // API returns capitalized keys (ID, FirstName, etc.) — normalize them
+        const contacts = data.results.map(normalizeContact);
+
+        renderContacts(contacts);
+    })
+    .catch(() =>
+    {
+        console.error("Could not connect to server.");
+    });
+}
+
+// ─── NORMALIZE CONTACT ────────────────────────────────────────────────────────
+
+// Convert API's capitalized keys to camelCase for consistent use in JS
+// API returns: { ID, FirstName, LastName, Phone, Email }
+// We use:      { id, firstName, lastName, phone, email }
+function normalizeContact(raw)
+{
+    return {
+        id:        raw.ID,
+        firstName: raw.FirstName,
+        lastName:  raw.LastName,
+        phone:     raw.Phone,
+        email:     raw.Email
+    };
 }
 
 // ─── RENDER CONTACTS ──────────────────────────────────────────────────────────
@@ -264,12 +332,12 @@ function setEditEnabled(enabled)
         selectedContact = null;
     }
 
-    // Toggle disabled on inputs and buttons
+    // Toggle disabled attribute on all inputs and buttons inside edit section
     const inputs  = editSection.querySelectorAll("input");
     const buttons = editSection.querySelectorAll("button");
 
-    inputs.forEach(input   => input.disabled   = !enabled);
-    buttons.forEach(button => button.disabled  = !enabled);
+    inputs.forEach(input   => input.disabled  = !enabled);
+    buttons.forEach(button => button.disabled = !enabled);
 
     // Show or hide the hint text
     if (editHint)
@@ -280,7 +348,7 @@ function setEditEnabled(enabled)
 
 // ─── ADD CONTACT ──────────────────────────────────────────────────────────────
 
-// Add a new contact
+// Add a new contact for the logged-in user
 function addContact()
 {
     const firstName = document.getElementById("addFirstName").value.trim();
@@ -295,20 +363,33 @@ function addContact()
         return;
     }
 
-    // Clear any previous error on success
     showFormError("addError", "");
 
-    // TODO: replace with fetch() POST to API_BASE + "/contacts"
-    // Request body: { firstName, lastName, email, phone }
-    // On success: call loadContacts() to refresh the list
+    const userId = parseInt(sessionStorage.getItem("userId"));
 
-    console.log("Add contact:", { firstName, lastName, email, phone });
+    // POST { firstName, lastName, phone, email, userId } → { error }
+    apiPost("AddContact.php", { firstName, lastName, phone, email, userId })
+    .then(data =>
+    {
+        if (data.error !== "")
+        {
+            showFormError("addError", data.error);
+            return;
+        }
 
-    // Clear add form after submission
-    document.getElementById("addFirstName").value = "";
-    document.getElementById("addLastName").value  = "";
-    document.getElementById("addEmail").value     = "";
-    document.getElementById("addPhone").value     = "";
+        // Clear form fields after successful add
+        document.getElementById("addFirstName").value = "";
+        document.getElementById("addLastName").value  = "";
+        document.getElementById("addEmail").value     = "";
+        document.getElementById("addPhone").value     = "";
+
+        // Refresh the contact list
+        loadContacts();
+    })
+    .catch(() =>
+    {
+        showFormError("addError", "Could not connect to server.");
+    });
 }
 
 // ─── UPDATE CONTACT ───────────────────────────────────────────────────────────
@@ -330,14 +411,29 @@ function updateContact()
         return;
     }
 
-    // Clear any previous error on success
     showFormError("editError", "");
 
-    // TODO: replace with fetch() PUT to API_BASE + "/contacts/" + selectedContact.id
-    // Request body: { firstName, lastName, email, phone }
-    // On success: call loadContacts() to refresh the list
+    const userId = parseInt(sessionStorage.getItem("userId"));
+    const id     = parseInt(selectedContact.id);
 
-    console.log("Update contact:", selectedContact.id, { firstName, lastName, email, phone });
+    // POST { id, firstName, lastName, phone, email, userId } → { error }
+    apiPost("UpdateContact.php", { id, firstName, lastName, phone, email, userId })
+    .then(data =>
+    {
+        if (data.error !== "")
+        {
+            showFormError("editError", data.error);
+            return;
+        }
+
+        // Refresh contacts and deselect after update
+        loadContacts();
+        setEditEnabled(false);
+    })
+    .catch(() =>
+    {
+        showFormError("editError", "Could not connect to server.");
+    });
 }
 
 // ─── DELETE CONTACT ───────────────────────────────────────────────────────────
@@ -354,13 +450,27 @@ function deleteContact()
 
     if (!confirmed) return;
 
-    // TODO: replace with fetch() DELETE to API_BASE + "/contacts/" + selectedContact.id
-    // On success: call loadContacts() to refresh the list, then setEditEnabled(false)
+    const userId = parseInt(sessionStorage.getItem("userId"));
+    const id     = parseInt(selectedContact.id);
 
-    console.log("Delete contact:", selectedContact.id);
+    // POST { id, userId } → { error }
+    apiPost("DeleteContact.php", { id, userId })
+    .then(data =>
+    {
+        if (data.error !== "")
+        {
+            showFormError("editError", data.error);
+            return;
+        }
 
-    // Disable edit section after deletion
-    setEditEnabled(false);
+        // Refresh contacts and disable edit section after deletion
+        loadContacts();
+        setEditEnabled(false);
+    })
+    .catch(() =>
+    {
+        showFormError("editError", "Could not connect to server.");
+    });
 }
 
 // ─── FORM ERROR HELPER ────────────────────────────────────────────────────────
@@ -372,28 +482,36 @@ function showFormError(elementId, message)
     if (el) el.textContent = message;
 }
 
-// ─── SEARCH CONTACTS ───────────────────────────────────────────────────────────
+// ─── SEARCH CONTACTS ──────────────────────────────────────────────────────────
 
-// Search contacts by name (partial match required by the rubric)
+// Search contacts with a partial match against name and last name
 function searchContacts()
 {
-    const query = document.getElementById("searchInput").value.trim();
+    const query  = document.getElementById("searchInput").value.trim();
+    const userId = parseInt(sessionStorage.getItem("userId"));
 
-    // TODO: replace with fetch() GET to API_BASE + "/contacts/search?q=" + query
-    // The API must support partial matching (required by rubric)
-    // On success: call renderContacts(data) with the returned array
-
-    // ── MOCK VERSION: client-side filter (remove when API is ready) ──
-    const results = MOCK_CONTACTS.filter(contact =>
+    // POST { search, userId } → { results: [...], error }
+    apiPost("SearchContacts.php", { search: query, userId: userId })
+    .then(data =>
     {
-        const fullName = (contact.firstName + " " + contact.lastName).toLowerCase();
-        return fullName.includes(query.toLowerCase());
+        if (data.error !== "")
+        {
+            console.error("Search failed:", data.error);
+            return;
+        }
+
+        // Normalize capitalized API keys before rendering
+        const contacts = data.results.map(normalizeContact);
+
+        renderContacts(contacts);
+
+        // Deselect any contact after a new search
+        setEditEnabled(false);
+    })
+    .catch(() =>
+    {
+        console.error("Could not connect to server.");
     });
-
-    renderContacts(results);
-
-    // Deselect any contact after a new search
-    setEditEnabled(false);
 }
 
 // ─── LOGIN PAGE EVENT LISTENERS ───────────────────────────────────────────────
