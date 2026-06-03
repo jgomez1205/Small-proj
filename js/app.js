@@ -1,9 +1,8 @@
-// API base URL
+// API base URL — set this to your Digital Ocean domain before deploying
 const API_BASE = "http://dylanwexler.com/LAMPAPI";
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 
-// Currently selected contact object (null if none selected)
 let selectedContact = null;
 
 // ─── DOM REFERENCES ───────────────────────────────────────────────────────────
@@ -25,15 +24,23 @@ if (updateButton)  updateButton.addEventListener("click", updateContact);
 if (deleteButton)  deleteButton.addEventListener("click", deleteContact);
 if (searchButton)  searchButton.addEventListener("click", searchContacts);
 
+// Also search when pressing Enter in the search field
+const searchInput = document.getElementById("searchInput");
+if (searchInput)
+{
+    searchInput.addEventListener("keydown", e =>
+    {
+        if (e.key === "Enter") searchContacts();
+    });
+}
+
 // ─── ON PAGE LOAD ─────────────────────────────────────────────────────────────
 
-// Run setup when contacts page loads
 if (document.getElementById("contactList"))
 {
     initContactsPage();
 }
 
-// Redirect to login if not logged in, then load page
 function initContactsPage()
 {
     // Redirect to login if no user session exists
@@ -43,31 +50,22 @@ function initContactsPage()
         return;
     }
 
-    // Display the logged-in user's name
     displayUsername();
-
-    // Disable edit section until a contact is selected
     setEditEnabled(false);
-
-    // Load this user's contacts from the API
     loadContacts();
 }
 
 // ─── USERNAME ─────────────────────────────────────────────────────────────────
 
-// Show the logged-in user's first name in the header
 function displayUsername()
 {
     if (!welcomeText) return;
-
-    const firstName = sessionStorage.getItem("firstName") || "User";
-
+    const firstName = sessionStorage.getItem("firstName") || "there";
     welcomeText.textContent = "Hello, " + firstName;
 }
 
 // ─── API HELPER ───────────────────────────────────────────────────────────────
 
-// Send a POST request to a PHP endpoint and return the parsed JSON response
 function apiPost(endpoint, body)
 {
     return fetch(API_BASE + "/" + endpoint, {
@@ -78,9 +76,8 @@ function apiPost(endpoint, body)
     .then(res => res.json());
 }
 
-// ─── LOGIN PAGE FUNCTIONS ─────────────────────────────────────────────────────
+// ─── LOGIN / REGISTER ─────────────────────────────────────────────────────────
 
-// Log in an existing user
 function login()
 {
     const username = document.getElementById("loginUsername").value.trim();
@@ -93,38 +90,30 @@ function login()
         return;
     }
 
-    // POST { login, password } → { id, firstName, lastName, error }
     apiPost("Login.php", { login: username, password: password })
     .then(data =>
     {
-        // Show error message if login failed
         if (data.error !== "")
         {
             result.textContent = data.error;
             return;
         }
 
-        // Save user info to session storage
         sessionStorage.setItem("userId",    data.id);
         sessionStorage.setItem("firstName", data.firstName);
         sessionStorage.setItem("lastName",  data.lastName);
 
-        // Go to contacts page
         window.location.href = "contacts.html";
     })
-    .catch(() =>
-    {
-        result.textContent = "Could not connect to server.";
-    });
+    .catch(() => { result.textContent = "Could not connect to server."; });
 }
 
-// Register a new user
 function register()
 {
     const firstName = document.getElementById("registerFirstName").value.trim();
     const lastName  = document.getElementById("registerLastName").value.trim();
-    const username  = document.getElementById("loginUsername").value.trim();
-    const password  = document.getElementById("loginPassword").value.trim();
+    const username  = document.getElementById("registerUsername").value.trim();
+    const password  = document.getElementById("registerPassword").value.trim();
     const result    = document.getElementById("loginResult");
 
     if (!firstName || !lastName || !username || !password)
@@ -133,29 +122,21 @@ function register()
         return;
     }
 
-    // POST { firstName, lastName, login, password } → { error }
-    apiPost("Register.php", {
-        firstName: firstName,
-        lastName:  lastName,
-        login:     username,
-        password:  password
-    })
+    // Register then auto-login
+    apiPost("Register.php", { firstName, lastName, login: username, password })
     .then(data =>
     {
-        // Show error if registration failed (e.g. username taken)
         if (data.error !== "")
         {
             result.textContent = data.error;
             return;
         }
 
-        // Registration succeeded — now log the user in automatically
         result.textContent = "";
         return apiPost("Login.php", { login: username, password: password });
     })
     .then(data =>
     {
-        // Skip if register already showed an error
         if (!data) return;
 
         if (data.error !== "")
@@ -164,20 +145,15 @@ function register()
             return;
         }
 
-        // Save user info and redirect
         sessionStorage.setItem("userId",    data.id);
         sessionStorage.setItem("firstName", data.firstName);
         sessionStorage.setItem("lastName",  data.lastName);
 
         window.location.href = "contacts.html";
     })
-    .catch(() =>
-    {
-        result.textContent = "Could not connect to server.";
-    });
+    .catch(() => { result.textContent = "Could not connect to server."; });
 }
 
-// Clear session and return to login page
 function logout()
 {
     sessionStorage.clear();
@@ -186,37 +162,22 @@ function logout()
 
 // ─── CONTACT LOADING ──────────────────────────────────────────────────────────
 
-// Load all contacts for the logged-in user by searching with an empty string
 function loadContacts()
 {
     const userId = parseInt(sessionStorage.getItem("userId"));
 
-    // POST { search: "", userId } → { results: [...], error }
     apiPost("SearchContacts.php", { search: "", userId: userId })
     .then(data =>
     {
-        if (data.error !== "")
-        {
-            console.error("Failed to load contacts:", data.error);
-            return;
-        }
-
-        // API returns capitalized keys (ID, FirstName, etc.) — normalize them
-        const contacts = data.results.map(normalizeContact);
-
-        renderContacts(contacts);
+        if (data.error !== "") { console.error("Load failed:", data.error); return; }
+        renderContacts(data.results.map(normalizeContact));
     })
-    .catch(() =>
-    {
-        console.error("Could not connect to server.");
-    });
+    .catch(() => console.error("Could not connect to server."));
 }
 
 // ─── NORMALIZE CONTACT ────────────────────────────────────────────────────────
 
-// Convert API's capitalized keys to camelCase for consistent use in JS
-// API returns: { ID, FirstName, LastName, Phone, Email }
-// We use:      { id, firstName, lastName, phone, email }
+// Convert API's capitalized keys to camelCase
 function normalizeContact(raw)
 {
     return {
@@ -230,48 +191,51 @@ function normalizeContact(raw)
 
 // ─── RENDER CONTACTS ──────────────────────────────────────────────────────────
 
-// Build and inject contact cards from an array of contact objects
 function renderContacts(contacts)
 {
     const list = document.getElementById("contactList");
     if (!list) return;
 
-    // Clear existing cards
     list.innerHTML = "";
 
-    // Show a message if no contacts found
     if (contacts.length === 0)
     {
-        list.innerHTML = '<p class="text-white">No contacts found.</p>';
+        list.innerHTML = '<p class="no-contacts">No contacts found.</p>';
         return;
     }
 
-    // Create a card for each contact
     contacts.forEach(contact =>
     {
-        // Outer column div
-        const col = document.createElement("div");
-        col.className = "col-lg-4";
+        const col  = document.createElement("div");
+        col.className = "col-lg-4 col-md-6";
 
-        // Card div
         const card = document.createElement("div");
         card.className = "contact-card";
 
-        // Store contact data on the element for easy access
         card.dataset.id        = contact.id;
         card.dataset.firstName = contact.firstName;
         card.dataset.lastName  = contact.lastName;
         card.dataset.email     = contact.email;
         card.dataset.phone     = contact.phone;
 
-        // Click to select this contact
-        card.addEventListener("click", () => selectContact(card));
+        card.setAttribute("role", "button");
+        card.setAttribute("tabindex", "0");
+        card.setAttribute("aria-label", `${contact.firstName} ${contact.lastName}`);
 
-        // Card inner HTML
+        card.addEventListener("click", () => selectContact(card));
+        card.addEventListener("keydown", e =>
+        {
+            if (e.key === "Enter" || e.key === " ") selectContact(card);
+        });
+
+        // Build initials avatar
+        const initials = (contact.firstName[0] || "") + (contact.lastName[0] || "");
+
         card.innerHTML = `
+            <div class="contact-avatar" aria-hidden="true">${initials.toUpperCase()}</div>
             <h3 class="contact-name">${contact.firstName} ${contact.lastName}</h3>
-            <p class="contact-info">${contact.phone}</p>
-            <p class="contact-info">${contact.email}</p>
+            <p class="contact-info"><i class="bi bi-telephone" aria-hidden="true"></i>${contact.phone}</p>
+            <p class="contact-info"><i class="bi bi-envelope" aria-hidden="true"></i>${contact.email}</p>
         `;
 
         col.appendChild(card);
@@ -281,16 +245,11 @@ function renderContacts(contacts)
 
 // ─── CONTACT SELECTION ────────────────────────────────────────────────────────
 
-// Select a contact card and populate the edit form
 function selectContact(card)
 {
-    // Deselect previous card
     clearSelectedContacts();
-
-    // Highlight this card
     card.classList.add("selected-contact");
 
-    // Save selected contact data from the card's dataset
     selectedContact = {
         id:        card.dataset.id,
         firstName: card.dataset.firstName,
@@ -299,56 +258,37 @@ function selectContact(card)
         phone:     card.dataset.phone
     };
 
-    // Fill edit fields with selected contact's data
     document.getElementById("editFirstName").value = selectedContact.firstName;
     document.getElementById("editLastName").value  = selectedContact.lastName;
     document.getElementById("editEmail").value     = selectedContact.email;
     document.getElementById("editPhone").value     = selectedContact.phone;
 
-    // Enable the edit section now that a contact is selected
     setEditEnabled(true);
 }
 
-// Remove selected styling from all contact cards
 function clearSelectedContacts()
 {
-    document.querySelectorAll(".contact-card").forEach(card =>
-    {
-        card.classList.remove("selected-contact");
-    });
+    document.querySelectorAll(".contact-card").forEach(c => c.classList.remove("selected-contact"));
 }
 
-// Enable or disable the entire edit section
 function setEditEnabled(enabled)
 {
-    // Toggle greyed-out class on the section wrapper
     if (enabled)
-    {
         editSection.classList.remove("edit-disabled");
-    }
     else
     {
         editSection.classList.add("edit-disabled");
         selectedContact = null;
     }
 
-    // Toggle disabled attribute on all inputs and buttons inside edit section
-    const inputs  = editSection.querySelectorAll("input");
-    const buttons = editSection.querySelectorAll("button");
+    editSection.querySelectorAll("input").forEach(i  => i.disabled  = !enabled);
+    editSection.querySelectorAll("button").forEach(b => b.disabled = !enabled);
 
-    inputs.forEach(input   => input.disabled  = !enabled);
-    buttons.forEach(button => button.disabled = !enabled);
-
-    // Show or hide the hint text
-    if (editHint)
-    {
-        editHint.style.display = enabled ? "none" : "block";
-    }
+    if (editHint) editHint.style.display = enabled ? "none" : "block";
 }
 
 // ─── ADD CONTACT ──────────────────────────────────────────────────────────────
 
-// Add a new contact for the logged-in user
 function addContact()
 {
     const firstName = document.getElementById("addFirstName").value.trim();
@@ -356,7 +296,6 @@ function addContact()
     const email     = document.getElementById("addEmail").value.trim();
     const phone     = document.getElementById("addPhone").value.trim();
 
-    // Show inline error and stop if any field is empty
     if (!firstName || !lastName || !email || !phone)
     {
         showFormError("addError", "All fields are required.");
@@ -367,34 +306,23 @@ function addContact()
 
     const userId = parseInt(sessionStorage.getItem("userId"));
 
-    // POST { firstName, lastName, phone, email, userId } → { error }
     apiPost("AddContact.php", { firstName, lastName, phone, email, userId })
     .then(data =>
     {
-        if (data.error !== "")
-        {
-            showFormError("addError", data.error);
-            return;
-        }
+        if (data.error !== "") { showFormError("addError", data.error); return; }
 
-        // Clear form fields after successful add
         document.getElementById("addFirstName").value = "";
         document.getElementById("addLastName").value  = "";
         document.getElementById("addEmail").value     = "";
         document.getElementById("addPhone").value     = "";
 
-        // Refresh the contact list
         loadContacts();
     })
-    .catch(() =>
-    {
-        showFormError("addError", "Could not connect to server.");
-    });
+    .catch(() => showFormError("addError", "Could not connect to server."));
 }
 
 // ─── UPDATE CONTACT ───────────────────────────────────────────────────────────
 
-// Update the selected contact
 function updateContact()
 {
     if (!selectedContact) return;
@@ -404,7 +332,6 @@ function updateContact()
     const email     = document.getElementById("editEmail").value.trim();
     const phone     = document.getElementById("editPhone").value.trim();
 
-    // Show inline error and stop if any field is empty
     if (!firstName || !lastName || !email || !phone)
     {
         showFormError("editError", "All fields are required.");
@@ -416,34 +343,23 @@ function updateContact()
     const userId = parseInt(sessionStorage.getItem("userId"));
     const id     = parseInt(selectedContact.id);
 
-    // POST { id, firstName, lastName, phone, email, userId } → { error }
     apiPost("UpdateContact.php", { id, firstName, lastName, phone, email, userId })
     .then(data =>
     {
-        if (data.error !== "")
-        {
-            showFormError("editError", data.error);
-            return;
-        }
+        if (data.error !== "") { showFormError("editError", data.error); return; }
 
-        // Refresh contacts and deselect after update
         loadContacts();
         setEditEnabled(false);
     })
-    .catch(() =>
-    {
-        showFormError("editError", "Could not connect to server.");
-    });
+    .catch(() => showFormError("editError", "Could not connect to server."));
 }
 
 // ─── DELETE CONTACT ───────────────────────────────────────────────────────────
 
-// Delete the selected contact
 function deleteContact()
 {
     if (!selectedContact) return;
 
-    // Confirm before deleting
     const confirmed = confirm(
         "Delete " + selectedContact.firstName + " " + selectedContact.lastName + "?"
     );
@@ -453,29 +369,19 @@ function deleteContact()
     const userId = parseInt(sessionStorage.getItem("userId"));
     const id     = parseInt(selectedContact.id);
 
-    // POST { id, userId } → { error }
     apiPost("DeleteContact.php", { id, userId })
     .then(data =>
     {
-        if (data.error !== "")
-        {
-            showFormError("editError", data.error);
-            return;
-        }
+        if (data.error !== "") { showFormError("editError", data.error); return; }
 
-        // Refresh contacts and disable edit section after deletion
         loadContacts();
         setEditEnabled(false);
     })
-    .catch(() =>
-    {
-        showFormError("editError", "Could not connect to server.");
-    });
+    .catch(() => showFormError("editError", "Could not connect to server."));
 }
 
 // ─── FORM ERROR HELPER ────────────────────────────────────────────────────────
 
-// Show or clear an inline error message by element ID
 function showFormError(elementId, message)
 {
     const el = document.getElementById(elementId);
@@ -484,38 +390,23 @@ function showFormError(elementId, message)
 
 // ─── SEARCH CONTACTS ──────────────────────────────────────────────────────────
 
-// Search contacts with a partial match against name and last name
 function searchContacts()
 {
     const query  = document.getElementById("searchInput").value.trim();
     const userId = parseInt(sessionStorage.getItem("userId"));
 
-    // POST { search, userId } → { results: [...], error }
     apiPost("SearchContacts.php", { search: query, userId: userId })
     .then(data =>
     {
-        if (data.error !== "")
-        {
-            console.error("Search failed:", data.error);
-            return;
-        }
+        if (data.error !== "") { console.error("Search failed:", data.error); return; }
 
-        // Normalize capitalized API keys before rendering
-        const contacts = data.results.map(normalizeContact);
-
-        renderContacts(contacts);
-
-        // Deselect any contact after a new search
+        renderContacts(data.results.map(normalizeContact));
         setEditEnabled(false);
     })
-    .catch(() =>
-    {
-        console.error("Could not connect to server.");
-    });
+    .catch(() => console.error("Could not connect to server."));
 }
 
 // ─── LOGIN PAGE EVENT LISTENERS ───────────────────────────────────────────────
-// These only apply on index.html — they're guarded by null checks
 
 const loginButton    = document.getElementById("loginButton");
 const registerButton = document.getElementById("registerButton");
