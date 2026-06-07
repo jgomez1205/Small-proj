@@ -302,6 +302,20 @@ function addContact()
         return;
     }
 
+    // Phone validation
+    if (!/^\d{10}$/.test(phone))
+    {
+    showFormError("addError", "Phone number must be exactly 10 digits.");
+    return;
+    }
+
+    // Email validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    {
+    showFormError("addError", "Please enter a valid email address.");
+    return;
+    }
+
     showFormError("addError", "");
 
     const userId = parseInt(sessionStorage.getItem("userId"));
@@ -336,6 +350,18 @@ function updateContact()
     {
         showFormError("editError", "All fields are required.");
         return;
+    }
+    
+    if (!/^\d{10}$/.test(phone))
+    {
+    showFormError("editError", "Phone number must be exactly 10 digits.");
+    return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    {
+    showFormError("editError", "Please enter a valid email address.");
+    return;
     }
 
     showFormError("editError", "");
