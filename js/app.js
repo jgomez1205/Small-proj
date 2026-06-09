@@ -52,7 +52,6 @@ function initContactsPage()
 
     displayUsername();
     setEditEnabled(false);
-    loadContacts();
 }
 
 // ─── USERNAME ─────────────────────────────────────────────────────────────────
