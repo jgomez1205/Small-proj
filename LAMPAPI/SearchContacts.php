@@ -40,7 +40,7 @@ if (strlen($searchParam) > 0) {
     // This forces MySQL to match ONLY strings that start with this sequence.
     $search = $searchParam . "%";
 } else {
-    $search = "%"; // If empty, it will match all contacts for this user
+    $search = ""; // If empty, it will match no contacts
 }
 
 mysqli_report(MYSQLI_REPORT_OFF);

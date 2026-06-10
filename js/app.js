@@ -5,6 +5,9 @@ const API_BASE = "http://dylanwexler.com/LAMPAPI";
 
 let selectedContact = null;
 
+// Tracks the last search query so mutations (add/edit/delete) can re-run it
+let lastSearchQuery = "";
+
 // ─── DOM REFERENCES ───────────────────────────────────────────────────────────
 
 const logoutButton  = document.getElementById("logoutButton");
@@ -52,6 +55,7 @@ function initContactsPage()
 
     displayUsername();
     setEditEnabled(false);
+    loadContacts();
 }
 
 // ─── USERNAME ─────────────────────────────────────────────────────────────────
@@ -161,11 +165,20 @@ function logout()
 
 // ─── CONTACT LOADING ──────────────────────────────────────────────────────────
 
+// Load all contacts (used on page init)
 function loadContacts()
+{
+    lastSearchQuery = "";
+    refreshContacts();
+}
+
+// Re-run the last search query — called after add, update, and delete
+// so the displayed results stay consistent with what the user searched for
+function refreshContacts()
 {
     const userId = parseInt(sessionStorage.getItem("userId"));
 
-    apiPost("SearchContacts.php", { search: "", userId: userId })
+    apiPost("SearchContacts.php", { search: lastSearchQuery, userId: userId })
     .then(data =>
     {
         if (data.error !== "") { console.error("Load failed:", data.error); return; }
@@ -304,15 +317,15 @@ function addContact()
     // Phone validation
     if (!/^\d{10}$/.test(phone))
     {
-    showFormError("addError", "Phone number must be exactly 10 digits.");
-    return;
+        showFormError("addError", "Phone number must be exactly 10 digits.");
+        return;
     }
 
     // Email validation
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
     {
-    showFormError("addError", "Please enter a valid email address.");
-    return;
+        showFormError("addError", "Please enter a valid email address.");
+        return;
     }
 
     showFormError("addError", "");
@@ -329,7 +342,8 @@ function addContact()
         document.getElementById("addEmail").value     = "";
         document.getElementById("addPhone").value     = "";
 
-        loadContacts();
+        // Refresh using the current search query so results stay filtered
+        refreshContacts();
     })
     .catch(() => showFormError("addError", "Could not connect to server."));
 }
@@ -350,17 +364,17 @@ function updateContact()
         showFormError("editError", "All fields are required.");
         return;
     }
-    
+
     if (!/^\d{10}$/.test(phone))
     {
-    showFormError("editError", "Phone number must be exactly 10 digits.");
-    return;
+        showFormError("editError", "Phone number must be exactly 10 digits.");
+        return;
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
     {
-    showFormError("editError", "Please enter a valid email address.");
-    return;
+        showFormError("editError", "Please enter a valid email address.");
+        return;
     }
 
     showFormError("editError", "");
@@ -373,7 +387,8 @@ function updateContact()
     {
         if (data.error !== "") { showFormError("editError", data.error); return; }
 
-        loadContacts();
+        // Refresh using the current search query so results stay filtered
+        refreshContacts();
         setEditEnabled(false);
     })
     .catch(() => showFormError("editError", "Could not connect to server."));
@@ -399,7 +414,8 @@ function deleteContact()
     {
         if (data.error !== "") { showFormError("editError", data.error); return; }
 
-        loadContacts();
+        // Refresh using the current search query so results stay filtered
+        refreshContacts();
         setEditEnabled(false);
     })
     .catch(() => showFormError("editError", "Could not connect to server."));
@@ -417,18 +433,11 @@ function showFormError(elementId, message)
 
 function searchContacts()
 {
-    const query  = document.getElementById("searchInput").value.trim();
-    const userId = parseInt(sessionStorage.getItem("userId"));
+    // Save the query so refreshContacts() can reuse it after mutations
+    lastSearchQuery = document.getElementById("searchInput").value.trim();
 
-    apiPost("SearchContacts.php", { search: query, userId: userId })
-    .then(data =>
-    {
-        if (data.error !== "") { console.error("Search failed:", data.error); return; }
-
-        renderContacts(data.results.map(normalizeContact));
-        setEditEnabled(false);
-    })
-    .catch(() => console.error("Could not connect to server."));
+    refreshContacts();
+    setEditEnabled(false);
 }
 
 // ─── LOGIN PAGE EVENT LISTENERS ───────────────────────────────────────────────
